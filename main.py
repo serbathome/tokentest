@@ -1,11 +1,14 @@
 import base64
 import json
+import os
 from enum import Enum
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 
 app = FastAPI()
+
+ACCESS_TOKEN_HEADER = os.environ.get("ACCESS_TOKEN_NAME", "x-ms-token-demo-access-token")
 
 USERINFO_ENDPOINTS = {
     "bmw": "https://emea.int.alpha.sso.bmwgroup.com/auth/oauth2/realms/root/realms/alpha/userinfo",
@@ -29,10 +32,9 @@ async def get_user_info(access_token: str, provider: UserInfoProvider = UserInfo
 
 @app.get("/api/userinfo")
 async def user_info(request: Request, provider: UserInfoProvider = UserInfoProvider.bmw):
-    # Extract the access token from the x-ms-token-demo-access-token header
-    access_token = request.headers.get("x-ms-token-demo-access-token")
+    access_token = request.headers.get(ACCESS_TOKEN_HEADER)
     if not access_token:
-        raise HTTPException(status_code=400, detail="x-ms-token-demo-access-token header is missing")
+        raise HTTPException(status_code=400, detail=f"{ACCESS_TOKEN_HEADER} header is missing")
     try:
         return await get_user_info(access_token, provider)
     except httpx.HTTPStatusError as e:
